@@ -1,0 +1,428 @@
+
+##############################################
+## BUSCO completeness & cumulative assembly plots
+##############################################
+
+canu1_pol <- read.table("../Polished/run_canu_1_iteration_2_arrow_consensus.fa/short_summary.specific.lepidoptera_odb10.run_canu_1_iteration_2_arrow_consensus.fa.txt" ,skip=10,fill=T,header=F,sep="\t")[1:4,]
+
+wtdbg1_pol <- read.table("../Polished/run_wtdbg_1_iteration_2_arrow_consensus.fa/short_summary.specific.lepidoptera_odb10.run_wtdbg_1_iteration_2_arrow_consensus.fa.txt" ,skip=10,fill=T,header=F,sep="\t")[1:4,]
+
+flye1_pol <- read.table("../Polished/run_flye_1_iteration_2_arrow_consensus.fa/short_summary.specific.lepidoptera_odb10.run_flye_1_iteration_2_arrow_consensus.fa.txt" ,skip=10,fill=T,header=F,sep="\t")[1:4,]
+
+canu1_purge <- read.table("../hic_all/run_canu_1_iteration_2_arrow_consensus.purged.FINAL.fasta/short_summary.specific.lepidoptera_odb10.run_canu_1_iteration_2_arrow_consensus.purged.FINAL.fasta.txt" ,skip=10,fill=T,header=F,sep="\t")[1:4,]
+
+canu1_hm <- read.table("../hic_all/run_canu_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta/short_summary.specific.lepidoptera_odb10.run_canu_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta.txt" ,skip=10,fill=T,header=F,sep="\t")[1:4,]
+
+wtdbg1_purge <- read.table("../hic_all/run_wtdbg_1_iteration_2_arrow_consensus.purged.FINAL.fasta/short_summary.specific.lepidoptera_odb10.run_wtdbg_1_iteration_2_arrow_consensus.purged.FINAL.fasta.txt" ,skip=10,fill=T,header=F,sep="\t")[1:4,]
+
+wtdbg1_hm <- read.table("../hic_all/run_wtdbg_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta/short_summary.specific.lepidoptera_odb10.run_wtdbg_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta.txt" ,skip=10,fill=T,header=F,sep="\t")[1:4,]
+
+flye1_purge <- read.table("../hic_all/run_flye_1_iteration_2_arrow_consensus.purged.FINAL.fasta/short_summary.specific.lepidoptera_odb10.run_flye_1_iteration_2_arrow_consensus.purged.FINAL.fasta.txt" ,skip=10,fill=T,header=F,sep="\t")[1:4,]
+
+flye1_hm <- read.table("../hic_all/run_flye_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta/short_summary.specific.lepidoptera_odb10.run_flye_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta.txt" ,skip=10,fill=T,header=F,sep="\t")[1:4,]
+
+canu1_pol$ID <- "canu"
+canu1_purge$ID <- "canu + purge_dups + HiC"
+canu1_hm$ID <- "canu + HM2 + HiC"
+wtdbg1_pol$ID <- "wtdbg"
+wtdbg1_purge$ID <- "wtdbg + purge_dups + HiC"
+wtdbg1_hm$ID <- "wtdbg + HM2 + HiC"
+flye1_pol$ID <- "flye"
+flye1_purge$ID <- "flye + purge_dups + HiC"
+flye1_hm$ID <- "flye + HM2 + HiC"
+
+canu1_pol$ID2 <- "canu"
+canu1_purge$ID2 <- "canu"
+canu1_hm$ID2 <- "canu"
+wtdbg1_pol$ID2 <- "wtdbg"
+wtdbg1_purge$ID2 <- "wtdbg"
+wtdbg1_hm$ID2 <- "wtdbg"
+flye1_pol$ID2 <- "flye"
+flye1_purge$ID2 <- "flye"
+flye1_hm$ID2 <- "flye"
+
+merge<-rbind(canu1_pol,canu1_purge, canu1_hm,wtdbg1_pol, wtdbg1_purge, wtdbg1_hm,flye1_pol,flye1_purge, flye1_hm)
+
+library(ggplot2)
+cairo_pdf("BUSCO_plot.pdf",height=4.5,width=10)
+ggplot() + geom_col(data=merge,aes(x=ID,y=((V2/5286)*100),fill=V3)) +theme_minimal() + theme(text = element_text(size=12),axis.text.x = element_text(angle = 50, hjust =1)) + scale_fill_brewer(palette="Set2") + labs(x="",y="% BUSCO genes") + guides(fill=guide_legend(""))
+dev.off()
+
+library(ggplot2)
+library(data.table)
+canu1 <- fread("../Polished/canu_1_iteration_2_arrow_consensus.fa.fai",header=FALSE,sep="\t")
+canu1Sort <- canu1[order(-V2),]
+canu1Sort$Sum <- cumsum(canu1Sort$V2)
+
+canu1hm <- fread("../hic_all/canu_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta.fai",header=FALSE,sep="\t")
+canu1hmSort <- canu1hm[order(-V2),]
+canu1hmSort$Sum <- cumsum(canu1hmSort$V2)
+
+canu1purge <- fread("../hic_all/canu_1_iteration_2_arrow_consensus.purged.FINAL.fasta.fai",header=FALSE,sep="\t")
+canu1purgeSort <- canu1purge[order(-V2),]
+canu1purgeSort$Sum <- cumsum(canu1purgeSort$V2)
+
+wtdbg1 <- fread("../Polished/wtdbg_1_iteration_2_arrow_consensus.fa.fai",header=FALSE,sep="\t")
+wtdbg1Sort <- wtdbg1[order(-V2),]
+wtdbg1Sort$Sum <- cumsum(wtdbg1Sort$V2)
+
+wtdbg1hm <- fread("../hic_all/wtdbg_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta.fai",header=FALSE,sep="\t")
+wtdbg1hmSort <- wtdbg1hm[order(-V2),]
+wtdbg1hmSort$Sum <- cumsum(wtdbg1hmSort$V2)
+
+wtdbg1purge <- fread("../hic_all/wtdbg_1_iteration_2_arrow_consensus.purged.FINAL.fasta.fai",header=FALSE,sep="\t")
+wtdbg1purgeSort <- wtdbg1purge[order(-V2),]
+wtdbg1purgeSort$Sum <- cumsum(wtdbg1purgeSort$V2)
+
+flye1 <- fread("../Polished/flye_1_iteration_2_arrow_consensus.fa.fai",header=FALSE,sep="\t")
+flye1Sort <- flye1[order(-V2),]
+flye1Sort$Sum <- cumsum(flye1Sort$V2)
+
+flye1hm <- fread("../hic_all/flye_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta.fai",header=FALSE,sep="\t")
+flye1hmSort <- flye1hm[order(-V2),]
+flye1hmSort$Sum <- cumsum(flye1hmSort$V2)
+
+flye1purge <- fread("../hic_all/flye_1_iteration_2_arrow_consensus.purged.FINAL.fasta.fai",header=FALSE,sep="\t")
+flye1purgeSort <- flye1purge[order(-V2),]
+flye1purgeSort$Sum <- cumsum(flye1purgeSort$V2)
+
+canu1Sort$ID <- "canu"
+canu1purgeSort$ID <- "canu + purge_dups + HiC"
+canu1hmSort$ID <- "canu + HM2 + HiC"
+wtdbg1Sort$ID <- "wtdbg"
+wtdbg1purgeSort$ID <- "wtdbg + purge_dups + HiC"
+wtdbg1hmSort$ID <- "wtdbg + HM2 + HiC"
+flye1Sort$ID <- "flye"
+flye1purgeSort$ID <- "flye + purge_dups + HiC"
+flye1hmSort$ID <- "flye + HM2 + HiC"
+
+canu1Sort$ID2 <- "canu"
+canu1purgeSort$ID2 <- "canu"
+canu1hmSort$ID2 <- "canu"
+wtdbg1Sort$ID2 <- "wtdbg"
+wtdbg1purgeSort$ID2 <- "wtdbg"
+wtdbg1hmSort$ID2 <- "wtdbg"
+flye1Sort$ID2 <- "flye"
+flye1purgeSort$ID2 <- "flye"
+flye1hmSort$ID2 <- "flye"
+
+canu1Sort$index <- row.names(canu1Sort)
+canu1purgeSort$index <- row.names(canu1purgeSort)
+canu1hmSort$index <- row.names(canu1hmSort)
+wtdbg1Sort$index <- row.names(wtdbg1Sort)
+wtdbg1purgeSort$index <- row.names(wtdbg1purgeSort)
+wtdbg1hmSort$index <- row.names(wtdbg1hmSort)
+flye1Sort$index <- row.names(flye1Sort)
+flye1purgeSort$index <- row.names(flye1purgeSort)
+flye1hmSort$index <- row.names(flye1hmSort)
+
+merge<-rbind(canu1Sort,canu1purgeSort, canu1hmSort,wtdbg1Sort, wtdbg1purgeSort, wtdbg1hmSort,flye1Sort,flye1purgeSort, flye1hmSort)
+
+
+cairo_pdf("quast_full_plot.pdf",height=4.5,width=9)
+ggplot(data=merge) + geom_line(aes(y=Sum,x=as.numeric(index),group=ID,col=ID)) + facet_wrap(~ID2) + geom_hline(yintercept=340000000,linetype="dashed") + theme_minimal() + guides(fill=guide_legend("")) + labs(x="",y="Cumulative sum")
+dev.off() 
+
+##############################################
+## BUSCO alluvial plots (Unix)
+##############################################
+
+cut -f 1-8 ../Polished/run_canu_1_iteration_2_arrow_consensus.fa/run_lepidoptera_odb10/full_table.tsv > ../Polished/run_canu_1_iteration_2_arrow_consensus.fa/run_lepidoptera_odb10/full_table_cut18.tsv
+
+cut -f 1-8 ../hic_all/run_canu_1_iteration_2_arrow_consensus.purged.FINAL.fasta/run_lepidoptera_odb10/full_table.tsv > ../hic_all/run_canu_1_iteration_2_arrow_consensus.purged.FINAL.fasta/run_lepidoptera_odb10/full_table_cut18.tsv
+
+cut -f 1-8 ../hic_all/run_canu_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta/run_lepidoptera_odb10/full_table.tsv > ../hic_all/run_canu_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta/run_lepidoptera_odb10/full_table_cut18.tsv
+
+cut -f 1-8 ../Polished/run_wtdbg_1_iteration_2_arrow_consensus.fa/run_lepidoptera_odb10/full_table.tsv > ../Polished/run_wtdbg_1_iteration_2_arrow_consensus.fa/run_lepidoptera_odb10/full_table_cut18.tsv
+
+cut -f 1-8 ../hic_all/run_wtdbg_1_iteration_2_arrow_consensus.purged.FINAL.fasta/run_lepidoptera_odb10/full_table.tsv > ../hic_all/run_wtdbg_1_iteration_2_arrow_consensus.purged.FINAL.fasta/run_lepidoptera_odb10/full_table_cut18.tsv
+
+cut -f 1-8 ../hic_all/run_wtdbg_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta/run_lepidoptera_odb10/full_table.tsv > ../hic_all/run_wtdbg_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta/run_lepidoptera_odb10/full_table_cut18.tsv
+
+cut -f 1-8 ../Polished/run_flye_1_iteration_2_arrow_consensus.fa/run_lepidoptera_odb10/full_table.tsv > ../Polished/run_flye_1_iteration_2_arrow_consensus.fa/run_lepidoptera_odb10/full_table_cut18.tsv
+
+cut -f 1-8 ../hic_all/run_flye_1_iteration_2_arrow_consensus.purged.FINAL.fasta/run_lepidoptera_odb10/full_table.tsv > ../hic_all/run_flye_1_iteration_2_arrow_consensus.purged.FINAL.fasta/run_lepidoptera_odb10/full_table_cut18.tsv
+
+cut -f 1-8 ../hic_all/run_flye_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta/run_lepidoptera_odb10/full_table.tsv > ../hic_all/run_flye_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta/run_lepidoptera_odb10/full_table_cut18.tsv
+
+##############################################
+## BUSCO alluvial plots (R)
+##############################################
+
+library(ggplot2)
+
+busco_canu <- unique(read.table("../Polished/run_canu_1_iteration_2_arrow_consensus.fa/run_lepidoptera_odb10/full_table_cut18.tsv",fill = TRUE,sep="\t")[,1:2])
+busco_canu_purge <- unique(read.table("../hic_all/run_canu_1_iteration_2_arrow_consensus.purged.FINAL.fasta/run_lepidoptera_odb10/full_table_cut18.tsv",fill = TRUE,sep="\t")[,1:2])
+busco_canu_hm <- unique(read.table("../hic_all/run_canu_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta/run_lepidoptera_odb10/full_table_cut18.tsv",fill = TRUE,sep="\t")[,1:2])
+
+merge2<-merge(busco_canu_purge,busco_canu,by="V1")
+merge3<-merge(merge2,busco_canu_hm,by="V1")
+
+plot_data <- aggregate(V1 ~ V2.x + V2.y + V2 , data = merge3, FUN = length)
+
+library(data.table)
+plot_data2 <- melt(as.matrix(plot_data),id="V1")
+
+library(alluvial)
+
+plot_data$col[plot_data[,2] == "Complete"] <- "#fc8d62ff"
+plot_data$col[plot_data[,2] == "Duplicated"] <- "#66c2a5ff"
+plot_data$col[plot_data[,2] == "Fragmented"] <- "#8da0cbff"
+plot_data$col[plot_data[,2] == "Missing"] <- "#e78ac3ff"
+
+colnames(plot_data) <- c("purge_dups + HiC", "canu","HM2 + HiC","Size","col")
+
+cairo_pdf("canu_alluvial.pdf",height=8,width=4)
+
+#alluvial(plot_data[,1:3],freq=plot_data$Size,cex = 0.7,blocks=FALSE, col = plot_data[,5],gap.width=0.2,border=plot_data[,5])
+
+alluvial(plot_data[,1:3],freq=plot_data$Size,cex = 0.7,blocks=FALSE, col = plot_data[,5] ,hide=plot_data$Size < 3,gap.width=0.2,border=plot_data[,5])
+
+
+dev.off()
+
+library(ggplot2)
+
+busco_wtdbg <- unique(read.table("../Polished/run_wtdbg_1_iteration_2_arrow_consensus.fa/run_lepidoptera_odb10/full_table_cut18.tsv",fill = TRUE,sep="\t")[,1:2])
+busco_wtdbg_purge <- unique(read.table("../hic_all/run_wtdbg_1_iteration_2_arrow_consensus.purged.FINAL.fasta/run_lepidoptera_odb10/full_table_cut18.tsv",fill = TRUE,sep="\t")[,1:2])
+busco_wtdbg_hm <- unique(read.table("../hic_all/run_wtdbg_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta/run_lepidoptera_odb10/full_table_cut18.tsv",fill = TRUE,sep="\t")[,1:2])
+
+merge2<-merge(busco_wtdbg_purge,busco_wtdbg,by="V1")
+merge3<-merge(merge2,busco_wtdbg_hm,by="V1")
+
+plot_data <- aggregate(V1 ~ V2.x + V2.y + V2 , data = merge3, FUN = length)
+
+library(data.table)
+plot_data2 <- melt(as.matrix(plot_data),id="V1")
+
+library(alluvial)
+
+plot_data$col[plot_data[,2] == "Complete"] <- "#fc8d62ff"
+plot_data$col[plot_data[,2] == "Duplicated"] <- "#66c2a5ff"
+plot_data$col[plot_data[,2] == "Fragmented"] <- "#8da0cbff"
+plot_data$col[plot_data[,2] == "Missing"] <- "#e78ac3ff"
+
+colnames(plot_data) <- c("purge_dups + HiC", "wtdbg","HM2 + HiC","Size","col")
+
+cairo_pdf("wtdbg_alluvial.pdf",height=8,width=4)
+
+alluvial(plot_data[,1:3],freq=plot_data$Size,cex = 0.7,blocks=FALSE, col = plot_data[,5] ,hide=plot_data$Size < 3,gap.width=0.2,border=plot_data[,5])
+
+dev.off()
+
+###
+
+library(ggplot2)
+
+busco_flye <- unique(read.table("../Polished/run_flye_1_iteration_2_arrow_consensus.fa/run_lepidoptera_odb10/full_table_cut18.tsv",fill = TRUE,sep="\t")[,1:2])
+busco_flye_purge <- unique(read.table("../hic_all/run_flye_1_iteration_2_arrow_consensus.purged.FINAL.fasta/run_lepidoptera_odb10/full_table_cut18.tsv",fill = TRUE,sep="\t")[,1:2])
+busco_flye_hm <- unique(read.table("../hic_all/run_flye_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta/run_lepidoptera_odb10/full_table_cut18.tsv",fill = TRUE,sep="\t")[,1:2])
+
+merge2<-merge(busco_flye_purge,busco_flye,by="V1")
+merge3<-merge(merge2,busco_flye_hm,by="V1")
+
+plot_data <- aggregate(V1 ~ V2.x + V2.y + V2 , data = merge3, FUN = length)
+
+library(data.table)
+plot_data2 <- melt(as.matrix(plot_data),id="V1")
+
+library(alluvial)
+
+plot_data$col[plot_data[,2] == "Complete"] <- "#fc8d62ff"
+plot_data$col[plot_data[,2] == "Duplicated"] <- "#66c2a5ff"
+plot_data$col[plot_data[,2] == "Fragmented"] <- "#8da0cbff"
+plot_data$col[plot_data[,2] == "Missing"] <- "#e78ac3ff"
+
+colnames(plot_data) <- c("purge_dups + HiC", "flye","HM2 + HiC","Size","col")
+
+cairo_pdf("flye_alluvial.pdf",height=8,width=4)
+
+alluvial(plot_data[,1:3],freq=plot_data$Size,cex = 0.7,blocks=FALSE, col = plot_data[,5] ,hide=plot_data$Size < 3,gap.width=0.2,border=plot_data[,5])
+
+dev.off()
+
+
+##############################################
+## BUSCO pi/kmer plots (R)
+##############################################
+
+
+canu_hm <- read.csv("canu_hm_output_test.csv",header=F)
+canu_purge <- read.csv("canu_purged_output_test.csv",header=F)
+flye_hm <- read.csv("flye_hm_output_test.csv",header=F)
+flye_purge <- read.csv("flye_purged_output_test.csv",header=F)
+wtdbg_hm <- read.csv("wtdbg_hm_output_test.csv",header=F)
+wtdbg_purge <- read.csv("wtdbg_purged_output_test.csv",header=F)
+
+flye_hm[colnames(flye_purge[,16:20])] <- ""
+
+canu_hm_sub <- subset(canu_hm, canu_hm$V2 == 2)
+canu_purge_sub <- subset(canu_purge, canu_purge$V2 == 2)
+flye_hm_sub <- subset(flye_hm, flye_hm$V2 == 2)
+flye_purge_sub <- subset(flye_purge, flye_purge$V2 == 2)
+wtdbg_hm_sub <- subset(wtdbg_hm, wtdbg_hm$V2 == 2)
+wtdbg_purge_sub <- subset(wtdbg_purge, wtdbg_purge$V2 == 2)
+
+
+canu_purge_sub $ID2 <- "canu + purge_dups + HiC"
+canu_hm_sub $ID2 <- "canu + HM2 + HiC"
+wtdbg_purge_sub $ID2 <- "wtdbg + purge_dups + HiC"
+wtdbg_hm_sub $ID2 <- "wtdbg + HM2 + HiC"
+flye_purge_sub $ID2 <- "flye + purge_dups + HiC"
+flye_hm_sub $ID2 <- "flye + HM2 + HiC"
+
+canu_purge_sub $Program <- "canu"
+canu_hm_sub $Program <- "canu"
+wtdbg_purge_sub $Program <- "wtdbg"
+wtdbg_hm_sub $Program <- "wtdbg"
+flye_purge_sub $Program <- "flye"
+flye_hm_sub $Program <- "flye"
+
+merged <- rbind(canu_purge_sub,canu_hm_sub,wtdbg_purge_sub,wtdbg_hm_sub,flye_purge_sub,flye_hm_sub)
+
+merged_sub <- subset(merged, merged$V12 == "Duplicated")
+
+library(ggplot2)
+cairo_pdf("BUSCO_pi_plot.pdf",height=4.5,width=10)
+ggplot(data=merged_sub,aes(x=ID2,y=as.numeric(V10))) + geom_violin(aes(fill=Program),alpha=0.5,scale="count", draw_quantiles = c(0.5))   + labs(x="BUSCO haplotig resolution",y="Between copy πN/πS") + theme_minimal() + theme(axis.text.x = element_text(angle = 35, hjust =1))
+dev.off()
+
+cairo_pdf("BUSCO_canb_plot.pdf",height=4.5,width=10)
+ggplot(data=merged_sub,aes(x=ID2,y=as.numeric(V6))) + geom_violin(aes(fill=Program),alpha=0.5,scale="count", draw_quantiles = c(0.5))   + labs(x="BUSCO haplotig resolution",y="Between copy canberra k-mer distance" ) + theme_minimal() + theme(axis.text.x = element_text(angle = 35, hjust =1))
+dev.off()
+###
+
+merged_sub$tandem <- "NA"
+merged_sub[gsub(":.*","",merged_sub$V4) == gsub(":.*","",merged_sub$V5),]$tandem <- "Tandem"
+merged_sub[gsub(":.*","",merged_sub$V4) != gsub(":.*","",merged_sub$V5),]$tandem <- "Unique"
+
+cairo_pdf("BUSCO_pi_plot2.pdf",height=4.5,width=10)
+ggplot(data=merged_sub,aes(x=ID2,y=as.numeric(V10))) + geom_point(position = position_jitter(w = 0.2, h = 0),alpha=0.3,width=0.1) + geom_violin(aes(fill=Program),alpha=0.5,scale="count", draw_quantiles = c(0.5),color = "gray60") + labs(x="BUSCO haplotig resolution",y="Between copy πN/πS") + theme_minimal() + theme(axis.text.x = element_text(angle = 35, hjust =1)) + facet_wrap(~tandem) + scale_fill_brewer(palette = "Spectral")
+dev.off()
+
+cairo_pdf("BUSCO_canb_plot2.pdf",height=4.5,width=10)
+ggplot(data=merged_sub,aes(x=ID2,y=as.numeric(V6))) + geom_point(position = position_jitter(w = 0.2, h = 0),alpha=0.3,width=0.1) + geom_violin(aes(fill=Program),alpha=0.5,scale="count", draw_quantiles = c(0.5))   + labs(x="BUSCO haplotig resolution",y="Between copy canberra k-mer distance" ) + theme_minimal() + theme(axis.text.x = element_text(angle = 35, hjust =1)) + facet_wrap(~tandem) + scale_fill_brewer(palette = "Spectral")
+dev.off()
+
+##############################################
+## generate stacked k-mer plots (unix)
+##############################################
+
+for i in $(find ~/Plutella_2021/Assemblies/hic_all/ -maxdepth 1 -type f -iname *.fasta); do kat_jellyfish count -t 40 -m21 -C -s 10G -o ${i#*l/}.jf21 $i ; done
+
+for i in $(find ~/Plutella_2021/Assemblies/Polished/ -maxdepth 1 -type f -iname *_1_*.fasta); do kat_jellyfish count -t 40 -m21 -C -s 10G -o ${i#*d/}.jf21 $i ; done
+
+
+for i in $(ls *.fasta.jf21); do kat comp -t 40 -o Corr_PB_${i}Comp21  corrected_pacbio.jf21 $i ; done
+
+
+kat comp -t 40 -o Corr_PB_flye_1_iteration_2_arrow_consensus.fasta.jf21Comp21  corrected_pacbio.jf21 flye_1_iteration_2_arrow_consensus.fasta.jf21
+
+
+##############################################
+## generate stacked k-mer plots (R)
+##############################################
+
+
+library(reshape2)
+library(ggplot2)
+files <- list.files(path=".", pattern='main.mx', full.names = TRUE)
+
+merged <- data.frame("N"=c(),"variable"=c(),"value"=c(),"set"=c())
+for (file in files){
+	temp1 <- read.table(file, header=FALSE, sep=' ')
+	temp1_crop <- temp1[1:100,1:5]
+	colnames(temp1_crop) <- c("4","3","2","1","0")
+	temp1_crop$N <- as.numeric(as.character(row.names(temp1_crop)))-1
+	test1 <- melt(temp1_crop,id="N")
+	test1$set <- file
+	merged <- rbind(merged,test1)
+}
+
+
+merged$set_test <- gsub("./Corr_PB_", "", merged$set)
+merged$set_test2 <- gsub("_iteration_2_arrow_consensus", "", merged$set_test)
+merged$set_test3 <- gsub(".fasta.jf21Comp21-main.mx", "", merged$set_test2)
+merged$set_f = factor(merged$set_test3, levels=c("wtdbg_1" , "wtdbg_1.purged.FINAL", "wtdbg_1_wm_ref.FINAL","flye_1", "flye_1.purged.FINAL" ,"flye_1_wm_ref.FINAL" ,"canu_1", "canu_1.purged.FINAL","canu_1_wm_ref.FINAL" ))
+
+cairo_pdf("kmer_plot.pdf",height=4.5,width=10)
+ggplot(data=merged) + geom_area(aes(x=N,y=value,fill=rev(variable)),alpha=0.5) + facet_wrap(~set_f) + coord_cartesian(xlim=c(0,55),ylim=c(0,8000000))+ scale_fill_manual(values = c("green", "steelblue" ,"goldenrod1", "red3","black")) +labs(fill="Assembly k-mer coverage") + theme_minimal()
+dev.off()
+
+
+##############################################
+## B. mori synteny plot (R)
+##############################################
+
+points <- read.csv("../canu_output_test.csv",fill=TRUE,header=FALSE)
+points_sub <- subset(points,points$V12=="Complete")
+
+n1 <- read.table("../hic_canu_hm/align1.psl")
+nucmer <- n1[order(as.numeric(gsub("chr", "", n1$V14))),]
+
+library(circlize)
+#all_sub <- subset(all,all$V2>500000)
+
+###
+
+#nucmer_sub <- subset(nucmer, V10 %in% all_sub$V1)
+
+nuc1 <- nucmer[,c(10,12,13)]
+nuc2 <- nucmer[,c(14,16,17)]
+
+###
+
+
+
+
+
+
+
+chr_col <- data.frame(V1=unique(nucmer[,10]),V2=rand_color(length(unique(nucmer[,10])),luminosity = "bright",transparency = 0.25))
+
+new_nucmer <- merge(nucmer,chr_col, by.x  = "V10",by.y="V1")
+
+new_nucmer1  <- new_nucmer[order(as.numeric(gsub("chr", "", new_nucmer$V14))),]
+new_nucmer2  <- new_nucmer[rev(order(as.numeric(gsub("chr", "", new_nucmer$V14)))),]
+
+row.names(new_nucmer1) <- NULL
+row.names(new_nucmer2) <- NULL
+
+row.names(nucmer) <- NULL
+
+part1 <- data.frame(V1=new_nucmer1$V2.y,V2=new_nucmer1$V10,V3=new_nucmer1$V11)
+part2 <-data.frame(V1=new_nucmer2$V2.y,V2=new_nucmer2$V14,V3=new_nucmer2$V15)
+
+col_all <- rbind(part1,part2)
+col_key <- col_all[row.names(unique(col_all[,c("V2","V3")])),]
+col_key$V4 <- 0
+row.names(col_key) <- NULL
+
+cairo_pdf("canu_Bm_links.pdf",height=8,width=4)
+
+circos.clear()
+col_text <- "grey40"
+circos.par(gap.degree=0.4,cell.padding=c(0,0,0,0))
+circos.initialize(factors=col_key$V2,xlim=matrix(c(col_key$V4,col_key$V3),ncol=2))
+
+
+#bed <- points_sub[,c(13,14,15,8,6)]
+#bed$V8 <- log(as.numeric(bed$V8))
+#circos.genomicTrackPlotRegion(ylim=c(-8,0.1),bed, numeric.column = 4,
+#panel.fun =function(region, value, ...) {
+#circos.genomicPoints(region,pch=16, cex=0.3, value, ...)
+#})
+
+
+# genomes
+circos.track(ylim=c(0,1),panel.fun=function(x,y) {
+chr=CELL_META$sector.index
+xlim=CELL_META$xlim
+ylim=CELL_META$ylim
+#circos.text(mean(xlim),mean(ylim),chr,cex=0.5,col=col_text,facing="bending.inside",niceFacing=TRUE)
+},bg.col=col_key$V1,bg.border=F,track.height=0.04)
+
+
+circos.genomicLink(nuc1,nuc2,col = new_nucmer1$V2.y)
+
+dev.off()
