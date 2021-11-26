@@ -1,0 +1,82 @@
+library(ggplot2)
+source("~/bin/genomescope/genomescope_mod.R")
+
+
+hom_dat <- data.frame("V1"=seq(1,length(result_df$hom)),"V2"=result_df$hom)
+het_dat <- data.frame("V1"=seq(1,length(result_df$het)),"V2"=result_df$het)
+error_dat <- data.frame("V1"=seq(1,length(result_df$error)),"V2"=result_df$error)
+
+library(reshape2)
+library(ggplot2)
+files <- list.files(path=".", pattern='main.mx', full.names = TRUE)
+
+merged <- data.frame("N"=c(),"variable"=c(),"value"=c(),"set"=c())
+for (file in files){
+	temp1 <- read.table(file, header=FALSE, sep=' ')
+	temp1_crop <- temp1[1:100,1:5]
+	colnames(temp1_crop) <- c("4","3","2","1","0")
+	temp1_crop$N <- as.numeric(as.character(row.names(temp1_crop)))-1
+	test1 <- melt(temp1_crop,id="N")
+	test1$set <- file
+	merged <- rbind(merged,test1)
+}
+
+
+merged$set_test <- gsub("./Corr_PB_", "", merged$set)
+merged$set_test2 <- gsub("_iteration_2_arrow_consensus", "", merged$set_test)
+merged$set_test3 <- gsub(".fasta.jf21Comp21-main.mx", "", merged$set_test2)
+merged$set_f = factor(merged$set_test3, levels=c("wtdbg_1" , "wtdbg_1.purged.FINAL", "wtdbg_1_wm_ref.FINAL","flye_1", "flye_1.purged.FINAL" ,"flye_1_wm_ref.FINAL" ,"canu_1", "canu_1.purged.FINAL","canu_1_wm_ref.FINAL" ))
+
+#cairo_pdf("kmer_plot.pdf",height=4.5,width=10)
+ggplot(data=merged) + geom_area(aes(x=N,y=value,fill=rev(variable)),alpha=0.5) + facet_wrap(~set_f) + coord_cartesian(xlim=c(0,55),ylim=c(0,8000000))+ scale_fill_manual(values = c("green", "steelblue" ,"goldenrod1", "red3","black")) +labs(fill="Assembly k-mer coverage") + theme_minimal()  + geom_line(data=hom_dat,aes(x=V1,y=V2)) + geom_line(data=het_dat,aes(x=V1,y=V2)) + geom_line(data=error_dat,aes(x=V1,y=V2))
+#dev.off()
+
+
+#merged[merged$variable==4 & merged$set_f=="canu_1_wm_ref.FINAL",]$value
+
+sum(pmin(na.omit(error_dat$V2[1:4500]),merged[merged$variable==4 & merged$set_f=="canu_1.purged.FINAL",]$value[1:16]))
+
+results_df <- data.frame("Read model"=c(),"Assembly1"=c(),"k-mer"=c(),"intersected sum"=c())
+for (file in levels(merged$set_f)){
+	for (number in seq(4,1)){
+		text<-data.frame("Read model"="error","Assembly1"=file,"k-mer"=number,"intersected sum"=sum(pmin(na.omit(error_dat$V2[1:4500]),merged[merged$variable==number & merged$set_f==file,]$value)))
+		results_df<-rbind(results_df,text)
+		#print(text)
+}
+}
+
+for (file in levels(merged$set_f)){
+	for (number in seq(4,1)){
+		text<-data.frame("Read model"="het","Assembly1"=file,"k-mer"=number,"intersected sum"=sum(pmin(na.omit(het_dat$V2[1:4500]),merged[merged$variable==number & merged$set_f==file,]$value)))
+		results_df<-rbind(results_df,text)
+}
+}
+
+for (file in levels(merged$set_f)){
+	for (number in seq(4,1)){
+		text<-data.frame("Read model"="hom","Assembly1"=file,"k-mer"=number,"intersected sum"=sum(pmin(na.omit(hom_dat$V2[1:4500]),merged[merged$variable==number & merged$set_f==file,]$value)))
+		results_df<-rbind(results_df,text)
+}
+}
+
+
+results_df$Assembly <- "NA"
+results_df[results_df$Assembly1=="wtdbg_1",]$Assembly <- "wtdbg"
+results_df[results_df$Assembly1=="wtdbg_1.purged.FINAL",]$Assembly <- "wtdbg + purge_dups + HiC"
+results_df[results_df$Assembly1=="wtdbg_1_wm_ref.FINAL",]$Assembly <- "wtdbg + HM2 + HiC"
+results_df[results_df$Assembly1=="canu_1",]$Assembly <- "canu"
+results_df[results_df$Assembly1=="canu_1.purged.FINAL",]$Assembly <- "canu + purge_dups + HiC"
+results_df[results_df$Assembly1=="canu_1_wm_ref.FINAL",]$Assembly <- "canu + HM2 + HiC"
+results_df[results_df$Assembly1=="flye_1",]$Assembly <- "flye"
+results_df[results_df$Assembly1=="flye_1.purged.FINAL",]$Assembly <- "flye + purge_dups + HiC"
+results_df[results_df$Assembly1=="flye_1_wm_ref.FINAL",]$Assembly <- "flye + HM2 + HiC"
+
+dev.off()
+dev.off()
+
+cairo_pdf("kmer_intersection_plot.pdf",height=4.5,width=10)
+ggplot(data=results_df) + geom_point(aes(x=Assembly,y=intersected.sum,col=rev(factor(k.mer))),alpha=0.6) + facet_wrap(~Read.model) + theme_minimal() + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_color_manual(values = c("black","red3","goldenrod1","steelblue"))
+dev.off()
+
+
+print(results_df)
