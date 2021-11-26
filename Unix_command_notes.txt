@@ -1,0 +1,198 @@
+##################################
+## Generate initial assemblies
+##################################
+
+screen -L flye --resume --genome-size 340m -t 60 -o flye_1 --pacbio-raw /pub33/pbio/v2.3.0/smrtanalysis/userdata/jobs/016/016476/data/filtered_subreads.fasta
+
+screen -L flye --resume --genome-size 340m -t 60 -o flye_2 -m 10000 --meta --pacbio-raw /pub33/pbio/v2.3.0/smrtanalysis/userdata/jobs/016/016476/data/filtered_subreads.fasta
+
+
+screen -L ../canu/Linux-amd64/bin/canu -p Px_Haps -d Px_Haps corOutCoverage=200 "batOptions=-dg 3 -db 3 -dr 1 -ca 500 -cp 50"
+
+
+screen -L canu -p Px_Haps_new -d Px_Haps_new  genomeSize=340m corOutCoverage=200 correctedErrorRate=0.040 "batOptions=-dg 3 -db 3 -dr 1 -ca 500 -cp 50" -pacbio-raw /pub33/pbio/v2.3.0/smrtanalysis/userdata/jobs/016/016476/data/filtered_subreads.fastq 
+
+
+screen -L ~/bin/wtdbg2/wtdbg2 -t 60 -x rs -g 340m -L 5000 -R -A --aln-dovetail -1 -o Px_dbg_1 /pub33/pbio/v2.3.0/smrtanalysis/userdata/jobs/016/016476/data/filtered_subreads.fastq
+
+screen -L ~/bin/wtdbg2/wtdbg2 -t 60 -x rs -g 340m -L 5000 -k 0 -p 17 -R -A -S 2 --aln-dovetail -1 -o Px_dbg_2 /pub33/pbio/v2.3.0/smrtanalysis/userdata/jobs/016/016476/data/filtered_subreads.fastq
+
+screen -L ~/bin/wtdbg2/wtdbg2 -t 60 -x rs -g 340m -L 5000 -k 0 -p 15 -R -A -S 2 --aln-dovetail -1 -o Px_dbg_3 /pub33/pbio/v2.3.0/smrtanalysis/userdata/jobs/016/016476/data/filtered_subreads.fastq
+
+
+screen -L ~/bin/wtdbg2/wtpoa-cns -t 16 -i Px_dbg_1.ctg.lay.gz -fo Px_dbg_1.raw.fa
+
+screen -L ~/bin/wtdbg2/wtpoa-cns -t 16 -i Px_dbg_2.ctg.lay.gz -fo Px_dbg_2.raw.fa
+
+screen -L ~/bin/wtdbg2/wtpoa-cns -t 16 -i Px_dbg_3.ctg.lay.gz -fo Px_dbg_3.raw.fa
+
+##################################
+## Assembly polishing
+##################################
+
+
+INPUT=/pub33/pbio/v2.3.0/smrtanalysis/userdata/jobs/016/016476/input.fofn
+GENOME=/pub46/samw/Plutella_2021/Assemblies/canu-2.1.1/Px_Haps_new/Px_Haps_new.contigs.fasta
+
+~pbio7/smrtlink/smrtcmds/bin/bax2bam --subread --xml=/pub33/pbio/v2.3.0/smrtanalysis/userdata/jobs/016/016476/input.fofn -o Plutella_2021
+
+##screen -L ~matt/scripts/bash/arrow_polish_iterative_smrtlink7_v0.9.sh -s canu_test -f ~/Velocity/Aphantopus_hyprantus/iAphHyp1.PB.asm2.purge2.scaff1.fa -b /scratch/samw/Ah_merged.subreads.bam -i 2 -t 60 -o Polishing
+
+
+screen -L ~/bin/quiver_polish_iterative_MG.sh -s wtdbg_1 -f /pub46/samw/Plutella_2021/Assemblies/wtdbg2/Px_dbg_1.raw.fa -b /pub46/samw/Plutella_2021/Assemblies/test_polish/input_bam.fofn -i 2 -t 20 -o test1
+
+screen -L ~/bin/quiver_polish_iterative_MG.sh -s canu_1 -f /pub46/samw/Plutella_2021/Assemblies/canu-2.1.1/Px_Haps_new/Px_Haps_new.contigs.fasta -b /pub46/samw/Plutella_2021/Assemblies/test_polish/input_bam.fofn -i 2 -t 20 -o test1
+
+screen -L ~/bin/quiver_polish_iterative_MG.sh -s flye_1 -f /pub46/samw/Plutella_2021/Assemblies/flye/flye_1/assembly.fasta -b /pub46/samw/Plutella_2021/Assemblies/test_polish/input_bam.fofn -i 2 -t 20 -o test1
+
+screen -L ~/bin/quiver_polish_iterative_MG.sh -s flye_2 -f /pub46/samw/Plutella_2021/Assemblies/flye/flye_2/assembly.fasta -b /pub46/samw/Plutella_2021/Assemblies/test_polish/input_bam.fofn -i 2 -t 20 -o test1
+
+screen -L ~/bin/quiver_polish_iterative_MG.sh -s wtdbg_2 -f /pub46/samw/Plutella_2021/Assemblies/wtdbg2/Px_dbg_2.raw.fa -b /pub46/samw/Plutella_2021/Assemblies/test_polish/input_bam.fofn -i 2 -t 20 -o test1
+
+screen -L ~/bin/quiver_polish_iterative_MG.sh -s wtdbg_3 -f /pub46/samw/Plutella_2021/Assemblies/wtdbg2/Px_dbg_3.raw.fa -b /pub46/samw/Plutella_2021/Assemblies/test_polish/input_bam.fofn -i 2 -t 20 -o test1
+
+
+##################################
+## purge_dups runs
+##################################
+
+
+sed 's/|quiver|quiver/_quiver_quiver/g' canu_1_iteration_2_arrow_consensus.fasta >canu_1_iteration_2_arrow_consensus.fa
+
+screen -L python scripts/run_purge_dups.py  -p bash config.canu_1.PB.asm1.json purge_dups/src/ canu_1/
+
+screen -L python /pub46/samw/Plutella_2021/Assemblies/purge_dups/purge_dups/scripts/run_purge_dups.py -p bash /pub46/samw/Plutella_2021/Assemblies/purge_dups/config.canu_1.PB.asm1.json ~/bin/miniconda3/envs/polish/bin/ canu_1
+
+screen -L python /pub46/samw/Plutella_2021/Assemblies/purge_dups/purge_dups/scripts/run_purge_dups.py -p bash /pub46/samw/Plutella_2021/Assemblies/purge_dups/config.flye_1.PB.asm1.json ~/bin/miniconda3/envs/polish/bin/ flye_1
+
+screen -L python /pub46/samw/Plutella_2021/Assemblies/purge_dups/purge_dups/scripts/run_purge_dups.py -p bash /pub46/samw/Plutella_2021/Assemblies/purge_dups/config.flye_2.PB.asm1.json ~/bin/miniconda3/envs/polish/bin/ flye_2
+
+screen -L python /pub46/samw/Plutella_2021/Assemblies/purge_dups/purge_dups/scripts/run_purge_dups.py -p bash /pub46/samw/Plutella_2021/Assemblies/purge_dups/config.wtdbg_1.PB.asm1.json ~/bin/miniconda3/envs/polish/bin/ wtdbg_1
+
+screen -L python /pub46/samw/Plutella_2021/Assemblies/purge_dups/purge_dups/scripts/run_purge_dups.py -p bash /pub46/samw/Plutella_2021/Assemblies/purge_dups/config.wtdbg_2.PB.asm1.json ~/bin/miniconda3/envs/polish/bin/ wtdbg_2
+
+screen -L python /pub46/samw/Plutella_2021/Assemblies/purge_dups/purge_dups/scripts/run_purge_dups.py -p bash /pub46/samw/Plutella_2021/Assemblies/purge_dups/config.wtdbg_3.PB.asm1.json ~/bin/miniconda3/envs/polish/bin/ wtdbg_3
+
+#screen
+
+##################################
+## BUSCO analyses (python script seperate)
+##################################
+
+for i in $(ls *.fa); do python /pub46/samw/bin/busco_v5/busco-5.0.0/bin/busco -i $i -o run_${i} -l /pub46/samw/bin/busco_v5/lepidoptera_odb10 -m genome -c 32 --augustus  --augustus_species heliconius_melpomene1 ; done
+
+##python BUSCO_sel_v0.2.py -i Polished/run_canu_1_iteration_2_arrow_consensus.fa/run_lepidoptera_odb10/ -f Polished/canu_1_iteration_2_arrow_consensus.fa
+
+python BUSCO_sel_v0.3.py -i Polished/run_canu_1_iteration_2_arrow_consensus.fa/run_lepidoptera_odb10/ -f Polished/canu_1_iteration_2_arrow_consensus.fa -p hic_canu_hm/run_canu_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta/run_lepidoptera_odb10/
+
+python BUSCO_sel_v0.3.py -i Polished/run_canu_1_iteration_2_arrow_consensus.fa/run_lepidoptera_odb10/ -f Polished/canu_1_iteration_2_arrow_consensus.fa -p hic_all/run_canu_1_iteration_2_arrow_consensus_wm_ref.FINAL.fasta/run_lepidoptera_odb10/ > sel_out/canu_hm_output_test.csv 
+
+python BUSCO_sel_v0.3.py -i Polished/run_canu_1_iteration_2_arrow_consensus.fa/run_lepidoptera_odb10/ -f Polished/canu_1_iteration_2_arrow_consensus.fa -p hic_all/run_canu_1_iteration_2_arrow_consensus.purged.FINAL.fasta/run_lepidoptera_odb10/ > sel_out/canu_purged_output_test.csv
+
+##################################
+## HiC for purge_dups assemblies
+##################################
+
+screen -L sh ./01_mapping_arima_female.sh
+
+bamToBed -i test1_rep1.bam > test1_rep1.bed
+sort -k 4  test1_rep1.bed > tmp && mv tmp  test1_rep1.bed
+
+python run_pipeline.py -a unitigs.fasta -l unitigs.fasta.fai -b female_rep1.bed -e GATC -o scaffolds -m yes -g unitigs_graph.gfa
+
+screen -L python ~/bin/SALSA-2.2/run_pipeline.py -a ~/MedFly_Mapping/Medfly_reassemble/Canu_SplitHap/Medfly1/asm-haplotypeFemale/asm-haplotypeFemale.unitigs.fasta -l ~/MedFly_Mapping/Medfly_reassemble/Canu_SplitHap/Medfly1/asm-haplotypeFemale/asm-haplotypeFemale.unitigs.fasta.fai -b female_rep1.bed -e GATC -o scaffolds -m yes -g ~/MedFly_Mapping/Medfly_reassemble/Canu_SplitHap/Medfly1/asm-haplotypeFemale/asm-haplotypeFemale.unitigs.gfa
+
+
+python ~/bin/juicer/misc/generate_site_positions.py DpnII canu_purged /pub46/samw/Plutella_2021/Assemblies/purge_dups/canu_1_iteration_2_arrow_consensus/seqs/canu_1_iteration_2_arrow_consensus.purged.fa
+
+screen -L ~/bin/juicer/CPU/juicer.sh -d /pub46/samw/Plutella_2021/Assemblies/hic_test/3d_test1/ -z /pub46/samw/Plutella_2021/Assemblies/purge_dups/canu_1_iteration_2_arrow_consensus/seqs/canu_1_iteration_2_arrow_consensus.purged.fa -p /pub46/samw/Plutella_2021/Assemblies/purge_dups/canu_1_iteration_2_arrow_consensus/seqs/canu_1_iteration_2_arrow_consensus.purged.fa.sizes -D /pub46/samw/bin/juicer/ -y canu_purged_DpnII.txt -t 30
+
+
+
+
+python ~/bin/juicer/misc/generate_site_positions.py DpnII wtdbg_purged /pub46/samw/Plutella_2021/Assemblies/purge_dups/wtdbg_1_iteration_2_arrow_consensus/seqs/wtdbg_1_iteration_2_arrow_consensus.purged.fa
+
+samtools faidx /pub46/samw/Plutella_2021/Assemblies/purge_dups/wtdbg_1_iteration_2_arrow_consensus/seqs/wtdbg_1_iteration_2_arrow_consensus.purged.fa 
+
+cut -f 1,2 /pub46/samw/Plutella_2021/Assemblies/purge_dups/wtdbg_1_iteration_2_arrow_consensus/seqs/wtdbg_1_iteration_2_arrow_consensus.purged.fa.fai > /pub46/samw/Plutella_2021/Assemblies/purge_dups/wtdbg_1_iteration_2_arrow_consensus/seqs/wtdbg_1_iteration_2_arrow_consensus.purged.fa.sizes
+
+bwa index /pub46/samw/Plutella_2021/Assemblies/purge_dups/wtdbg_1_iteration_2_arrow_consensus/seqs/wtdbg_1_iteration_2_arrow_consensus.purged.fa
+
+screen -L ~/bin/juicer/CPU/juicer.sh -d /pub46/samw/Plutella_2021/Assemblies/hic_wtdbg -z /pub46/samw/Plutella_2021/Assemblies/purge_dups/wtdbg_1_iteration_2_arrow_consensus/seqs/wtdbg_1_iteration_2_arrow_consensus.purged.fa -p /pub46/samw/Plutella_2021/Assemblies/purge_dups/wtdbg_1_iteration_2_arrow_consensus/seqs/wtdbg_1_iteration_2_arrow_consensus.purged.fa.sizes -D /pub46/samw/bin/juicer/ -y wtdbg_purged_DpnII.txt -t 30
+
+/pub46/samw/bin/3dDNA/3d-dna/run-asm-pipeline.sh --build-gapped-map /pub46/samw/Plutella_2021/Assemblies/purge_dups/wtdbg_1_iteration_2_arrow_consensus/seqs/wtdbg_1_iteration_2_arrow_consensus.purged.fa /pub46/samw/Plutella_2021/Assemblies/hic_wtdbg/aligned/merged_nodups.txt
+
+###
+
+python ~/bin/juicer/misc/generate_site_positions.py DpnII flye_purged flye_1_iteration_2_arrow_consensus.purged.fa
+
+samtools faidx flye_1_iteration_2_arrow_consensus.purged.fa
+
+cut -f 1,2 flye_1_iteration_2_arrow_consensus.purged.fa.fa.fai > flye_1_iteration_2_arrow_consensus.purged.fa.sizes
+
+bwa index flye_1_iteration_2_arrow_consensus.purged.fa
+
+screen -L ~/bin/juicer/CPU/juicer.sh -d /pub46/samw/Plutella_2021/Assemblies/hic_flye -z flye_1_iteration_2_arrow_consensus.purged.fa -p flye_1_iteration_2_arrow_consensus.purged.fa.sizes -D /pub46/samw/bin/juicer/ -y flye_purged_DpnII.txt -t 30
+
+screen -L /pub46/samw/bin/3dDNA/3d-dna/run-asm-pipeline.sh --build-gapped-map flye_1_iteration_2_arrow_consensus.purged.fa /pub46/samw/Plutella_2021/Assemblies/hic_flye/aligned/merged_nodups.txt
+
+##################################
+## Haplomerged assemblies (see seperate scripts)
+##################################
+
+
+##################################
+## HiC for Haplomerged assemblies
+##################################
+
+python ~/bin/juicer/misc/generate_site_positions.py DpnII canu_1_hm_purged ../Haplomerged/canu_1_iteration_2_arrow_consensus_wm_ref.fa
+
+samtools faidx ../Haplomerged/canu_1_iteration_2_arrow_consensus_wm_ref.fa 
+
+cut -f 1,2 ../Haplomerged/canu_1_iteration_2_arrow_consensus_wm_ref.fa.fai > canu_1_iteration_2_arrow_consensus_wm_ref.fa.sizes
+
+bwa index ../Haplomerged/canu_1_iteration_2_arrow_consensus_wm_ref.fa
+
+screen -L ~/bin/juicer/CPU/juicer.sh -d /pub46/samw/Plutella_2021/Assemblies/hic_canu_hm -z ../Haplomerged/canu_1_iteration_2_arrow_consensus_wm_ref.fa -p canu_1_iteration_2_arrow_consensus_wm_ref.fa.sizes  -D /pub46/samw/bin/juicer/ -y canu_1_hm_purged -t 30
+
+/pub46/samw/bin/3dDNA/3d-dna/run-asm-pipeline.sh --build-gapped-map ../Haplomerged/canu_1_iteration_2_arrow_consensus_wm_ref.fa /pub46/samw/Plutella_2021/Assemblies/hic_canu_hm/aligned/merged_nodups.txt
+
+##
+
+python ~/bin/juicer/misc/generate_site_positions.py DpnII wtdbg_1_hm_purged ../Haplomerged/wtdbg_1_iteration_2_arrow_consensus_wm_ref.fa
+
+samtools faidx ../Haplomerged/wtdbg_1_iteration_2_arrow_consensus_wm_ref.fa 
+
+cut -f 1,2 ../Haplomerged/wtdbg_1_iteration_2_arrow_consensus_wm_ref.fa.fai > wtdbg_1_iteration_2_arrow_consensus_wm_ref.fa.sizes
+
+bwa index ../Haplomerged/wtdbg_1_iteration_2_arrow_consensus_wm_ref.fa
+
+screen -L ~/bin/juicer/CPU/juicer.sh -d /pub46/samw/Plutella_2021/Assemblies/hic_wtdbg_hm -z ../Haplomerged/wtdbg_1_iteration_2_arrow_consensus_wm_ref.fa -p wtdbg_1_iteration_2_arrow_consensus_wm_ref.fa.sizes  -D /pub46/samw/bin/juicer/ -y wtdbg_1_hm_purged -t 30
+
+/pub46/samw/bin/3dDNA/3d-dna/run-asm-pipeline.sh --build-gapped-map ../Haplomerged/wtdbg_1_iteration_2_arrow_consensus_wm_ref.fa /pub46/samw/Plutella_2021/Assemblies/hic_wtdbg_hm/aligned/merged_nodups.txt
+
+##
+
+python ~/bin/juicer/misc/generate_site_positions.py DpnII flye_1_hm_purged ../Haplomerged/flye_1_iteration_2_arrow_consensus_wm_ref.fa
+
+samtools faidx ../Haplomerged/flye_1_iteration_2_arrow_consensus_wm_ref.fa 
+
+cut -f 1,2 ../Haplomerged/flye_1_iteration_2_arrow_consensus_wm_ref.fa.fai > flye_1_iteration_2_arrow_consensus_wm_ref.fa.sizes
+
+bwa index ../Haplomerged/flye_1_iteration_2_arrow_consensus_wm_ref.fa
+
+screen -L ~/bin/juicer/CPU/juicer.sh -d /pub46/samw/Plutella_2021/Assemblies/hic_flye_hm -z ../Haplomerged/flye_1_iteration_2_arrow_consensus_wm_ref.fa -p flye_1_iteration_2_arrow_consensus_wm_ref.fa.sizes  -D /pub46/samw/bin/juicer/ -y flye_1_hm_purged -t 30
+
+/pub46/samw/bin/3dDNA/3d-dna/run-asm-pipeline.sh --build-gapped-map ../Haplomerged/flye_1_iteration_2_arrow_consensus_wm_ref.fa /pub46/samw/Plutella_2021/Assemblies/hic_flye_hm/aligned/merged_nodups.txt
+
+##################################
+## get synteny with cactus
+##################################
+
+
+##fix all headers 
+sed 's/ .*//g' ~/Bombyx_assembly_versions/Kaiko/integretedseq.fasta >integretedseq_mod.fasta
+
+screen -L cactus ./alignment_try1 ./align1.txt ./align1.hal --binariesMode local --maxCores 60  --maxMemory 400G --workDir /scratch --setEnv LD_LIBRARY_PATH=~/bin/kyoto-install/lib:$LD_LIBRARY_PATH
+
+~/bin/hal/bin/halSynteny --queryGenome canu_hm --targetGenome Bombyx_mori --maxAnchorDistance 1000000 --minBlockSize 1000000 align1.hal align1.psl
