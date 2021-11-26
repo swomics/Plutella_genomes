@@ -1,3 +1,4 @@
 # Plutella genomes
 Program command notes &amp; scripts for Plutella MS
-This code is provided for transparency purposes only.
+
+The code provided is not intended as functional software, but is provided for transparency.
