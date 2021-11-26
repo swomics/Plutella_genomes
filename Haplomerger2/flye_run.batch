@@ -1,0 +1,71 @@
+#!/bin/bash
+
+#### ===========================================================================
+#### IMPORTANT NOTE:
+#### For raw diploid assembly with >2000 scaffold sequences, 
+#### make sure to lift your system??s openable file handle limit by invocating
+#### ??ulimit ?Cn 655350?? before running HM2 (root privilege required)!
+#### ===========================================================================
+
+#### ===========================================================================
+#### set the path to executables
+#### ===========================================================================
+export PATH=~/bin/x86_64:~/bin/lastz-distrib/bin:~/bin:~/bin/SSPACE-STANDARD-3.0_linux-x86_64:$PATH
+echo $PATH
+
+ulimit -n 655350
+
+~/bin/WindowMasker/windowmasker -checkdup true  -mk_counts  -in flye_1_iteration_2_arrow_consensus.fa  -out masking_library.ustat  -mem 6500 
+~/bin/WindowMasker/windowmasker -ustat masking_library.ustat  -in flye_1_iteration_2_arrow_consensus.fa  -out flye_1_iteration_2_arrow_consensus_wm.fa -outfmt fasta -dust true
+gzip flye_1_iteration_2_arrow_consensus_wm.fa
+
+#### ===========================================================================
+#### step 1: break the misjoins and output the new diploid assembly
+#### ===========================================================================
+#### default input:        ./{assembly_name}.fa.gz
+#### default final output: ./{assembly_name}_A.fa.gz
+ 
+#./hm.batchA1.initiation_and_all_lastz  your_assembly_name
+#./hm.batchA2.chainNet_and_netToMaf     your_assembly_name
+#./hm.batchA3.misjoin_processing        your_assembly_name
+
+#### ===========================================================================
+#### step 2: separate/merge two alleles and output haploid assemblies
+#### ===========================================================================
+#### default input:        ./{assembly_name}_A.fa.gz
+#### default final output: ./{assembly_name}_A_ref.fa.gz
+#### default final output: ./{assembly_name}_A_alt.fa.gz
+  
+./hm.batchB1.initiation_and_all_lastz             flye_1_iteration_2_arrow_consensus_wm
+./hm.batchB2.chainNet_and_netToMaf                flye_1_iteration_2_arrow_consensus_wm
+./hm.batchB3.haplomerger                  flye_1_iteration_2_arrow_consensus_wm
+./hm.batchB4.refine_unpaired_sequences            flye_1_iteration_2_arrow_consensus_wm
+./hm.batchB5.merge_paired_and_unpaired_sequences  flye_1_iteration_2_arrow_consensus_wm
+
+#### ===========================================================================
+#### step 3: further scaffold the obtained haploid assemblies
+#### ===========================================================================
+#### default input:        ./{assembly_name}_A_ref.fa.gz
+#### default final output: ./{assembly_name}_A_ref_C.fa.gz
+#### default final output: ./{assembly_name}_A_alt_C.fa.gz
+  
+#./hm.batchC1.hierarchical_scaffolding                      your_assembly_name_A_ref
+#./hm.batchC2.update_reference_and_alternative_assemblies   your_assembly_name_A_ref
+
+#### ===========================================================================
+#### step 4: remove tandem errors from haploid assemblies
+#### ===========================================================================
+#### default input:        ./{assembly_name}_A_ref_C.fa.gz
+#### default final output: ./{assembly_name}_A_ref_C_D.fa.gz
+
+#./hm.batchD1.initiation_and_all_lastz     your_assembly_name_A_ref_C
+#./hm.batchD2.chainNet_and_netToMaf        your_assembly_name_A_ref_C
+#./hm.batchD3.remove_tandem_assemblies     your_assembly_name_A_ref_C
+
+#### ===========================================================================
+#### step 5: try to close Ngaps in haploid assemblies
+#### ===========================================================================
+#### default input:        ./{assembly_name}_A_ref_C_D.fa.gz
+#### default final output: ./{assembly_name}_A_ref_C_D_E.fa.gz
+
+#./hm.batchE1.wrapper_for_gapCloser_v1.12  your_assembly_name_A_ref_C_D
